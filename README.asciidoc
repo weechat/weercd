@@ -1,0 +1,53 @@
+= weercd
+:author: Sébastien Helleu
+:email: flashcode@flashtux.org
+:lang: en
+
+`weercd` is the WeeChat IRC testing server.
+
+It can be used with any IRC client (not only WeeChat).
+
+In the 'flood' mode, various IRC commands are sent in a short time (privmsg,
+notice, join/quit, ..) to test client resistance and memory usage (to quickly
+detect memory leaks, for example with client scripts).
+
+== Install
+
+This script works with Python 2.x (>= 2.7) and 3.x.
+
+It is *STRONGLY RECOMMENDED* to connect this server with a client in a test
+environment:
+
+* For WeeChat, another home with: `weechat --dir /tmp/weechat`.
+* On a test machine, because CPU will be used a lot by client to display
+  messages from weercd.
+* If possible locally (ie server and client on same machine), to speed up
+  data exchange between server and client.
+
+== Run with WeeChat
+
+Open a terminal and run server:
+
+----
+python weercd.py
+----
+
+Open another terminal and run WeeChat with home in '/tmp/weechat':
+
+----
+weechat --dir /tmp/weechat
+----
+
+Optional: install script(s) in WeeChat (for example `/script install xxx`).
+
+Add server and connect to it:
+
+----
+/server add weercd 127.0.0.1/7777
+/connect weercd
+----
+
+Wait some months.....
+
+WeeChat still not crashed and does not use 200 TB of RAM ?
+Yeah, it's stable!
