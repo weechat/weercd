@@ -7,7 +7,7 @@
 
 It can be used with any IRC client (not only WeeChat).
 
-In the 'flood' mode, various IRC commands are sent in a short time (privmsg,
+In the "flood" mode, various IRC commands are sent in a short time (privmsg,
 notice, join/quit, ..) to test client resistance and memory usage (to quickly
 detect memory leaks, for example with client scripts).
 
@@ -47,7 +47,7 @@ Add server and connect to it:
 /connect weercd
 ----
 
-Wait some months.....
+Wait some months...
 
-WeeChat still not crashed and does not use 200 TB of RAM ?
-Yeah, it's stable!
+WeeChat still not crashed and does not use 200 TB of RAM ? +
+Yeah, it's stable! \o/
