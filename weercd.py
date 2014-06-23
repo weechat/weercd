@@ -376,7 +376,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
                         countrate=countrate,
                         bytesrate=bytesrate))
         if self.endmsg == 'connection lost':
-            print('Uh-oh! No quit received, client has crashed? Ahah \\o/')
+            print('Uh-oh! No quit received, client has crashed? Haha \\o/')
 
     def __del__(self):
         self.stats()
