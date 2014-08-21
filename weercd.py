@@ -99,7 +99,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         try:
             while not self.quit:
                 self.flood()
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             if self.quit:
                 self.endmsg = 'quit received'
             else:
@@ -340,7 +340,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             self.endmsg = 'unable to read file {0}'.format(self.args.file)
             self.endexcept = exc
             return
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             traceback.print_exc()
             self.endmsg = 'connection lost'
             return
