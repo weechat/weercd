@@ -56,7 +56,7 @@ Yeah, it's stable! \o/
 
 Copyright (C) 2011-2014 Sébastien Helleu <flashcode@flashtux.org>
 
-This file is part of weercd, the extensible chat client.
+This file is part of weercd, the WeeChat IRC testing server.
 
 weercd is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
