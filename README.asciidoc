@@ -11,6 +11,8 @@ In the "flood" mode, various IRC commands are sent in a short time (privmsg,
 notice, join/quit, ..) to test client resistance and memory usage (to quickly
 detect memory leaks, for example with client scripts).
 
+image:https://travis-ci.org/weechat/weercd.svg?branch=master["Build Status", link="https://travis-ci.org/weechat/weercd"]
+
 == Install
 
 This script works with Python 2.x (>= 2.7) and 3.x.
