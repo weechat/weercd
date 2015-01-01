@@ -54,7 +54,7 @@ Yeah, it's stable! \o/
 
 == Copyright
 
-Copyright (C) 2011-2014 Sébastien Helleu <flashcode@flashtux.org>
+Copyright (C) 2011-2015 Sébastien Helleu <flashcode@flashtux.org>
 
 This file is part of weercd, the WeeChat IRC testing server.
 
