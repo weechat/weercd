@@ -3,6 +3,8 @@
 :email: flashcode@flashtux.org
 :lang: en
 
+image:https://travis-ci.org/weechat/weercd.svg?branch=master["Build Status", link="https://travis-ci.org/weechat/weercd"]
+
 `weercd` is the WeeChat IRC testing server.
 
 It can be used with any IRC client (not only WeeChat).
@@ -10,8 +12,6 @@ It can be used with any IRC client (not only WeeChat).
 In the "flood" mode, various IRC commands are sent in a short time (privmsg,
 notice, join/quit, ..) to test client resistance and memory usage (to quickly
 detect memory leaks, for example with client scripts).
-
-image:https://travis-ci.org/weechat/weercd.svg?branch=master["Build Status", link="https://travis-ci.org/weechat/weercd"]
 
 == Install
 
