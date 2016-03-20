@@ -315,12 +315,12 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             sys.stdout.write('.')
             sys.stdout.flush()
 
-    def send_file(self):
+    def send_file(self):  # pylint: disable=too-many-branches
         """Send messages from a file to client."""
         stdin = self.args.file == sys.stdin
         count = 0
         self.read(0.2)
-        try:
+        try:  # pylint: disable=too-many-nested-blocks
             while True:
                 # display the prompt if we are reading in stdin
                 if stdin:
