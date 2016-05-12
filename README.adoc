@@ -34,7 +34,7 @@ Open a terminal and run server:
 python weercd.py
 ----
 
-Open another terminal and run WeeChat with home in '/tmp/weechat':
+Open another terminal and run WeeChat with home in _/tmp/weechat_:
 
 ----
 weechat --dir /tmp/weechat
@@ -52,7 +52,7 @@ Add server and connect to it:
 Wait some months...
 
 WeeChat still not crashed and does not use 200 TB of RAM ? +
-Yeah, it's stable! \o/
+Yeah, it's stable! `\o/`
 
 == Copyright
 
