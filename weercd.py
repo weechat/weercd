@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011-2016 Sébastien Helleu <flashcode@flashtux.org>
+# Copyright (C) 2011-2018 Sébastien Helleu <flashcode@flashtux.org>
 #
 # This file is part of weercd, the WeeChat IRC testing server.
 #
@@ -38,7 +38,7 @@ import time
 import traceback
 
 NAME = 'weercd'
-VERSION = '0.8'
+VERSION = '0.9'
 
 
 def fuzzy_string(minlength=1, maxlength=50, spaces=False):
@@ -324,7 +324,8 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             while True:
                 # display the prompt if we are reading in stdin
                 if stdin:
-                    sys.stdout.write('Message to send to client: ')
+                    sys.stdout.write('Message to send to client '
+                                     '(/help for help): ')
                     sys.stdout.flush()
                 message = self.args.file.readline()
                 if not message:
@@ -332,9 +333,14 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
                 if sys.version_info < (3,):
                     message = message.decode('UTF-8')
                 message = message.rstrip('\n')
-                if message and not message.startswith('//'):
-                    self.send(message.format(self=self))
-                    count += 1
+                if message:
+                    if message.startswith('/') and message[1:2] != '/':
+                        command = message[1:]
+                        if command == 'help':
+                            pass
+                    elif not message.startswith('//'):
+                        self.send(message.format(self=self))
+                        count += 1
                 self.read(0.1 if stdin else self.args.sleep)
         except IOError as exc:
             self.endmsg = 'unable to read file {0}'.format(self.args.file)
