@@ -115,8 +115,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         if with_number:
             self.nicknumber += 1
             return '{0}{1}'.format(fuzzy_string(1, 5), self.nicknumber)
-        else:
-            return fuzzy_string(1, 10)
+        return fuzzy_string(1, 10)
 
     def send(self, data):
         """Send one message to client."""
@@ -239,7 +238,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
 
     def flood_channel_part(self, channel):
         """Part or quit of a user in a channel."""
-        if len(self.channels[channel]) == 0:
+        if not self.channels[channel]:
             return
         rnick = self.channel_random_nick(channel)
         if not rnick:
@@ -254,7 +253,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
 
     def flood_channel_kick(self, channel):
         """Kick of a user in a channel."""
-        if len(self.channels[channel]) == 0:
+        if not self.channels[channel]:
             return
         rnick1 = self.channel_random_nick(channel)
         rnick2 = self.channel_random_nick(channel)
@@ -266,7 +265,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
 
     def flood_channel_message(self, channel):
         """Message from a user in a channel."""
-        if len(self.channels[channel]) == 0:
+        if not self.channels[channel]:
             return
         rnick = self.channel_random_nick(channel)
         if not rnick:
