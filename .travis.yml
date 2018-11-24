@@ -8,4 +8,4 @@ install:
   - "pip install pylint"
 
 script:
-  - pylint weercd.py
+  - pylint --disable=r0205 weercd.py
