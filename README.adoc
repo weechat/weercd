@@ -20,7 +20,7 @@ This script works with Python 2.x (>= 2.7) and 3.x.
 It is *STRONGLY RECOMMENDED* to connect this server with a client in a test
 environment:
 
-* For WeeChat, another home with: `weechat --dir /tmp/weechat`.
+* For WeeChat, a temporary home directory (see below).
 * On a test machine, because CPU will be used a lot by client to display
   messages from weercd.
 * If possible locally (ie server and client on same machine), to speed up
@@ -37,8 +37,13 @@ python weercd.py
 Open another terminal and run WeeChat with home in _/tmp/weechat_:
 
 ----
-weechat --dir /tmp/weechat
+weechat --temp-dir
 ----
+
+[NOTE]
+The option `--temp-dir` (or `-t`) has been added in WeeChat 2.4, so with
+an older version you can do: `weechat --dir /tmp/weechat` (this directory
+is not automatically removed on exit).
 
 Optional: install script(s) in WeeChat (for example `/script install xxx`).
 
