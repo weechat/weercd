@@ -34,7 +34,7 @@ Open a terminal and run server:
 python weercd.py
 ----
 
-Open another terminal and run WeeChat with home in _/tmp/weechat_:
+Open another terminal and run WeeChat with a temporary home directory:
 
 ----
 weechat --temp-dir
