@@ -345,12 +345,12 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             self.endmsg = 'unable to read file {0}'.format(self.args.file)
             self.endexcept = exc
             return
-        except Exception as exc:  # pylint: disable=broad-except
-            traceback.print_exc()
-            self.endmsg = 'connection lost'
-            return
         except KeyboardInterrupt:
             self.endmsg = 'interrupted'
+            return
+        except Exception:  # pylint: disable=broad-except
+            traceback.print_exc()
+            self.endmsg = 'connection lost'
             return
         finally:
             sys.stdout.write('\n')
