@@ -67,7 +67,8 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
     """A client of weercd server."""
 
     def __init__(self, sock, addr, args):
-        self.sock, self.addr = sock, addr
+        self.sock = sock
+        self.addr = addr
         self.args = args
         self.name = NAME
         self.version = VERSION
@@ -75,8 +76,13 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         self.nicknumber = 0
         self.channels = {}
         self.lastbuf = ''
-        self.incount, self.outcount, self.inbytes, self.outbytes = 0, 0, 0, 0
-        self.quit, self.endmsg, self.endexcept = False, '', None
+        self.incount = 0
+        self.outcount = 0
+        self.inbytes = 0
+        self.outbytes = 0
+        self.quit = False
+        self.endmsg = ''
+        self.endexcept = None
         self.starttime = time.time()
         self.connect()
 
