@@ -45,10 +45,15 @@ def fuzzy_string(minlength=1, maxlength=50, spaces=False):
     """Return a fuzzy string (random length and content)."""
     length = random.randint(minlength, maxlength)
     strspace = ' ' if spaces else ''
-    return ''.join(random.choice(string.ascii_uppercase +
-                                 string.ascii_lowercase +
-                                 string.digits + strspace)
-                   for x in range(length))
+    return ''.join(
+        random.choice(
+            string.ascii_uppercase
+            + string.ascii_lowercase
+            + string.digits
+            + strspace
+        )
+        for x in range(length)
+    )
 
 
 def fuzzy_host():
