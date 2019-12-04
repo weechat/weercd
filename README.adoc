@@ -23,7 +23,7 @@ environment:
 * For WeeChat, a temporary home directory (see below).
 * On a test machine, because CPU will be used a lot by client to display
   messages from weercd.
-* If possible locally (ie server and client on same machine), to speed up
+* If possible locally (i.e. server and client on same machine), to speed up
   data exchange between server and client.
 
 == Run with WeeChat
