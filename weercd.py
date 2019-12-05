@@ -299,7 +299,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
                           nick=rnick, host=fuzzy_host(), target=channel)
 
     def flood(self):
-        """Yay, funny stuff here! Flood the client!"""
+        """Yeah, funny stuff here! Flood the client!"""
         self.read(self.args.sleep)
         # global actions
         action = random.randint(1, 2)
