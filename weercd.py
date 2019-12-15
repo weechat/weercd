@@ -67,17 +67,17 @@ class Client:  # pylint: disable=too-many-instance-attributes
         self.name = NAME
         self.version = VERSION
         self.nick = ''
-        self.nicknumber = 0
+        self.nick_number = 0
         self.channels = {}
-        self.lastbuf = ''
-        self.incount = 0
-        self.outcount = 0
-        self.inbytes = 0
-        self.outbytes = 0
+        self.last_buffer = ''
+        self.in_count = 0
+        self.out_count = 0
+        self.in_bytes = 0
+        self.out_bytes = 0
         self.quit = False
-        self.endmsg = ''
-        self.endexcept = None
-        self.starttime = time.time()
+        self.end_msg = ''
+        self.end_exception = None
+        self.start_time = time.time()
         self.connect()
 
     def run(self):
@@ -101,20 +101,20 @@ class Client:  # pylint: disable=too-many-instance-attributes
                 self.flood()
         except Exception as exc:  # pylint: disable=broad-except
             if self.quit:
-                self.endmsg = 'quit received'
+                self.end_msg = 'quit received'
             else:
-                self.endmsg = 'connection lost'
-            self.endexcept = exc
+                self.end_msg = 'connection lost'
+            self.end_exception = exc
         except KeyboardInterrupt:
-            self.endmsg = 'interrupted'
+            self.end_msg = 'interrupted'
         else:
-            self.endmsg = 'quit received'
+            self.end_msg = 'quit received'
 
     def random_nick(self, with_number=False):
         """Return a random nick name."""
         if with_number:
-            self.nicknumber += 1
-            return f'{random_string(5)}{self.nicknumber}'
+            self.nick_number += 1
+            return f'{random_string(5)}{self.nick_number}'
         return random_string(10)
 
     def send(self, data):
@@ -122,9 +122,9 @@ class Client:  # pylint: disable=too-many-instance-attributes
         if self.args.debug:
             print(f'<-- {data}')
         msg = data + '\r\n'
-        self.outbytes += len(msg)
+        self.out_bytes += len(msg)
         self.sock.send(msg.encode('UTF-8'))
-        self.outcount += 1
+        self.out_count += 1
 
     # pylint: disable=too-many-arguments
     def send_command(self, command, data, nick=None, host='', target=None):
@@ -157,7 +157,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
                     del self.channels[channel]
         elif data.startswith('QUIT '):
             self.quit = True
-        self.incount += 1
+        self.in_count += 1
 
     def read(self, timeout):
         """Read raw data received from client."""
@@ -166,15 +166,15 @@ class Client:  # pylint: disable=too-many-instance-attributes
             data = self.sock.recv(4096)
             if data:
                 data = data.decode('UTF-8')
-                self.inbytes += len(data)
-                data = self.lastbuf + data
+                self.in_bytes += len(data)
+                data = self.last_buffer + data
                 while True:
                     pos = data.find('\r\n')
                     if pos < 0:
                         break
                     self.recv(data[0:pos])
                     data = data[pos + 2:]
-                self.lastbuf = data
+                self.last_buffer = data
 
     def connect(self):
         """Inform the client that the connection is OK."""
@@ -195,7 +195,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
             self.send_command('004', 'Let\'s see!')
         except KeyboardInterrupt:
             self.quit = True
-            self.endmsg = 'interrupted'
+            self.end_msg = 'interrupted'
             return
 
     def channel_random_nick(self, channel):
@@ -309,7 +309,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
             else:
                 self.flood_channel_message(channel)
         # display progress
-        if self.outcount % 1000 == 0:
+        if self.out_count % 1000 == 0:
             sys.stdout.write('.')
             sys.stdout.flush()
 
@@ -341,15 +341,15 @@ class Client:  # pylint: disable=too-many-instance-attributes
                         count += 1
                 self.read(0.1 if stdin else self.args.sleep)
         except IOError as exc:
-            self.endmsg = f'unable to read file {self.args.file}'
-            self.endexcept = exc
+            self.end_msg = f'unable to read file {self.args.file}'
+            self.end_exception = exc
             return
         except KeyboardInterrupt:
-            self.endmsg = 'interrupted'
+            self.end_msg = 'interrupted'
             return
         except Exception:  # pylint: disable=broad-except
             traceback.print_exc()
-            self.endmsg = 'connection lost'
+            self.end_msg = 'connection lost'
             return
         finally:
             sys.stdout.write('\n')
@@ -365,18 +365,18 @@ class Client:  # pylint: disable=too-many-instance-attributes
     def stats(self):
         """Display some statistics about data exchanged with the client."""
         msgexcept = ''
-        if self.endexcept:
-            msgexcept = f'({self.endexcept})'
-        print(f'{self.endmsg} {msgexcept}')
-        elapsed = time.time() - self.starttime
-        countrate = self.outcount / elapsed
-        bytesrate = self.outbytes / elapsed
+        if self.end_exception:
+            msgexcept = f'({self.end_exception})'
+        print(f'{self.end_msg} {msgexcept}')
+        elapsed = time.time() - self.start_time
+        countrate = self.out_count / elapsed
+        bytesrate = self.out_bytes / elapsed
         print(f'Elapsed: {elapsed:.1f}s - '
-              f'packets: in:{self.incount}, out:{self.outcount} '
+              f'packets: in:{self.in_count}, out:{self.out_count} '
               f'({countrate:.0f}/s) - '
-              f'bytes: in:{self.inbytes}, out: {self.outbytes} '
+              f'bytes: in:{self.in_bytes}, out: {self.out_bytes} '
               f'({bytesrate:.0f}/s)')
-        if self.endmsg == 'connection lost':
+        if self.end_msg == 'connection lost':
             print('Uh-oh! No quit received, client has crashed? Haha \\o/')
 
     def __del__(self):
