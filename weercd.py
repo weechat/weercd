@@ -385,9 +385,8 @@ class Client:  # pylint: disable=too-many-instance-attributes
         self.sock.close()
 
 
-def main():
-    """Main function."""
-    # parse command line arguments
+def weercd_parser():
+    """Return the parser for command line options."""
     epilog = """\
 Note: the environment variable "WEERCD_OPTIONS" can be \
 set with default options. Argument "@file.txt" can be used to read \
@@ -425,6 +424,13 @@ default options in a file."""
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug output')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
+    return parser
+
+
+def main():
+    """Main function."""
+    # parse command line arguments
+    parser = weercd_parser()
     args = parser.parse_args(shlex.split(os.getenv('WEERCD_OPTIONS') or '')
                              + sys.argv[1:])
 
