@@ -57,58 +57,80 @@ def random_channel():
     return f'#{random_string(25)}'
 
 
-class Client:  # pylint: disable=too-many-instance-attributes
-    """A client of weercd server."""
+class Connection:  # pylint: disable=too-many-instance-attributes
+    """Connection with a client."""
 
-    def __init__(self, sock, addr, args):
+    def __init__(self, sock, addr, debug):
         self.sock = sock
         self.addr = addr
-        self.args = args
-        self.name = NAME
-        self.version = VERSION
-        self.nick = ''
-        self.nick_number = 0
-        self.channels = {}
+        self.debug = debug
         self.last_buffer = ''
+        self.start_time = time.time()
         self.in_count = 0
         self.out_count = 0
         self.in_bytes = 0
         self.out_bytes = 0
+
+    def __str__(self):
+        """Return connection statistics."""
+        elapsed = time.time() - self.start_time
+        countrate = self.out_count / elapsed
+        bytesrate = self.out_bytes / elapsed
+        return (f'Elapsed: {elapsed:.1f}s - '
+                f'packets: in:{self.in_count}, out:{self.out_count} '
+                f'({countrate:.0f}/s) - '
+                f'bytes: in:{self.in_bytes}, out: {self.out_bytes} '
+                f'({bytesrate:.0f}/s)')
+
+    def read(self, timeout):
+        """Read raw data received from client."""
+        msgs = []
+        inr = select.select([self.sock], [], [], timeout)[0]
+        if inr:
+            data = self.sock.recv(4096)
+            if data:
+                data = data.decode('UTF-8')
+                self.in_bytes += len(data)
+                data = self.last_buffer + data
+                while True:
+                    pos = data.find('\r\n')
+                    if pos < 0:
+                        break
+                    msgs.append(data[0:pos])
+                    data = data[pos + 2:]
+                self.last_buffer = data
+        return msgs
+
+    def send(self, data):
+        """Send one message to client."""
+        if self.debug:
+            print(f'<-- {data}')
+        msg = data + '\r\n'
+        self.out_bytes += len(msg)
+        self.sock.send(msg.encode('UTF-8'))
+        self.out_count += 1
+
+    def close(self):
+        """Close connection with client."""
+        print(f'Closing connection with {self.addr}')
+        self.sock.close()
+
+
+class Client:  # pylint: disable=too-many-instance-attributes
+    """A client of weercd server."""
+
+    def __init__(self, sock, addr, args):
+        self.conn = Connection(sock, addr, args.debug)
+        self.name = NAME
+        self.version = VERSION
+        self.args = args
+        self.nick = ''
+        self.nick_number = 0
+        self.channels = {}
         self.quit = False
         self.end_msg = ''
         self.end_exception = None
-        self.start_time = time.time()
         self.connect()
-
-    def run(self):
-        """Execute the action asked for the client."""
-        if self.quit:
-            return
-
-        # send commands from file (which can be stdin)
-        if self.args.file:
-            self.send_file()
-            return
-
-        # flood the client
-        if self.args.wait > 0:
-            print(f'Waiting {self.args.wait} seconds')
-            time.sleep(self.args.wait)
-        sys.stdout.write('Flooding client..')
-        sys.stdout.flush()
-        try:
-            while not self.quit:
-                self.flood()
-        except Exception as exc:  # pylint: disable=broad-except
-            if self.quit:
-                self.end_msg = 'quit received'
-            else:
-                self.end_msg = 'connection lost'
-            self.end_exception = exc
-        except KeyboardInterrupt:
-            self.end_msg = 'interrupted'
-        else:
-            self.end_msg = 'quit received'
 
     def random_nick(self, with_number=False):
         """Return a random nick name."""
@@ -117,14 +139,19 @@ class Client:  # pylint: disable=too-many-instance-attributes
             return f'{random_string(5)}{self.nick_number}'
         return random_string(10)
 
-    def send(self, data):
-        """Send one message to client."""
-        if self.args.debug:
-            print(f'<-- {data}')
-        msg = data + '\r\n'
-        self.out_bytes += len(msg)
-        self.sock.send(msg.encode('UTF-8'))
-        self.out_count += 1
+    def random_channel_nick(self, channel):
+        """Return a random nick of a channel."""
+        if len(self.channels[channel]) < 2:
+            return None
+        rand_nick = self.nick
+        while rand_nick == self.nick:
+            rand_nick = self.channels[channel][
+                random.randint(0, len(self.channels[channel]) - 1)]
+        return rand_nick
+
+    def send(self, message):
+        """Send an IRC message to the client."""
+        self.conn.send(message)
 
     # pylint: disable=too-many-arguments
     def send_command(self, command, data, nick=None, host='', target=None):
@@ -138,75 +165,49 @@ class Client:  # pylint: disable=too-many-instance-attributes
         data = f'{" :" if data else ""}{data}'
         self.send(f'{sender} {command}{target}{data}')
 
-    def recv(self, data):
+    def parse_message(self, message):
         """Read one IRC message from client."""
         if self.args.debug:
-            print(f'--> {data}')
-        if data.startswith('PING '):
-            args = data[5:]
+            print(f'--> {message}')
+        if message.startswith('PING '):
+            args = message[5:]
             if args[0] == ':':
                 args = args[1:]
             self.send(f'PONG :{args}')
-        elif data.startswith('NICK '):
-            self.nick = data[5:]
-        elif data.startswith('PART '):
-            match = re.search('^PART :?(#[^ ]+)', data)
+        elif message.startswith('NICK '):
+            self.nick = message[5:]
+        elif message.startswith('PART '):
+            match = re.search('^PART :?(#[^ ]+)', message)
             if match:
                 channel = match.group(1)
                 if channel in self.channels:
                     del self.channels[channel]
-        elif data.startswith('QUIT '):
+        elif message.startswith('QUIT '):
             self.quit = True
-        self.in_count += 1
+        self.conn.in_count += 1
 
-    def read(self, timeout):
-        """Read raw data received from client."""
-        inr = select.select([self.sock], [], [], timeout)[0]
-        if inr:
-            data = self.sock.recv(4096)
-            if data:
-                data = data.decode('UTF-8')
-                self.in_bytes += len(data)
-                data = self.last_buffer + data
-                while True:
-                    pos = data.find('\r\n')
-                    if pos < 0:
-                        break
-                    self.recv(data[0:pos])
-                    data = data[pos + 2:]
-                self.last_buffer = data
+    def recv(self, timeout):
+        """Receive messages and parse them."""
+        msgs = self.conn.read(timeout)
+        for msg in msgs:
+            self.parse_message(msg)
 
     def connect(self):
         """Inform the client that the connection is OK."""
-        try:
-            count = self.args.nickused
-            while self.nick == '':
-                self.read(0.1)
-                if self.nick and count > 0:
-                    self.send_command('433', 'Nickname is already in use.',
-                                      target=f'* {self.nick}')
-                    self.nick = ''
-                    count -= 1
-            self.send_command('001', 'Welcome to the WeeChat IRC server')
-            self.send_command('002',
-                              f'Your host is {self.name}, '
-                              f'running version {self.version}')
-            self.send_command('003', 'Are you solid like a rock?')
-            self.send_command('004', 'Let\'s see!')
-        except KeyboardInterrupt:
-            self.quit = True
-            self.end_msg = 'interrupted'
-            return
-
-    def channel_random_nick(self, channel):
-        """Return a random nick of a channel."""
-        if len(self.channels[channel]) < 2:
-            return None
-        rnick = self.nick
-        while rnick == self.nick:
-            rnick = self.channels[channel][
-                random.randint(0, len(self.channels[channel]) - 1)]
-        return rnick
+        count = self.args.nickused
+        while self.nick == '':
+            self.recv(0.1)
+            if self.nick and count > 0:
+                self.send_command('433', 'Nickname is already in use.',
+                                  target=f'* {self.nick}')
+                self.nick = ''
+                count -= 1
+        self.send_command('001', 'Welcome to the WeeChat IRC server')
+        self.send_command('002',
+                          f'Your host is {self.name}, '
+                          f'running version {self.version}')
+        self.send_command('003', 'Are you solid like a rock?')
+        self.send_command('004', 'Let\'s see!')
 
     def flood_self_join(self):
         """Self join on a new channel."""
@@ -214,7 +215,9 @@ class Client:  # pylint: disable=too-many-instance-attributes
         if channel in self.channels:
             return
         self.send_command('JOIN', channel,
-                          nick=self.nick, host=self.addr[0], target='')
+                          nick=self.nick,
+                          host=self.conn.addr[0],
+                          target='')
         self.send_command('353', f'@{self.nick}',
                           target=f'{self.nick} = {channel}')
         self.send_command('366', 'End of /NAMES list.',
@@ -239,41 +242,42 @@ class Client:  # pylint: disable=too-many-instance-attributes
         """Part or quit of a user in a channel."""
         if not self.channels[channel]:
             return
-        rnick = self.channel_random_nick(channel)
-        if not rnick:
+        rand_nick = self.random_channel_nick(channel)
+        if not rand_nick:
             return
         if random.randint(1, 2) == 1:
             self.send_command('PART', channel,
-                              nick=rnick, host=random_host(), target='')
+                              nick=rand_nick, host=random_host(), target='')
         else:
             self.send_command('QUIT', random_string(30),
-                              nick=rnick, host=random_host(), target='')
-        self.channels[channel].remove(rnick)
+                              nick=rand_nick, host=random_host(), target='')
+        self.channels[channel].remove(rand_nick)
 
     def flood_channel_kick(self, channel):
         """Kick of a user in a channel."""
         if not self.channels[channel]:
             return
-        rnick1 = self.channel_random_nick(channel)
-        rnick2 = self.channel_random_nick(channel)
-        if rnick1 and rnick2 and rnick1 != rnick2:
+        rand_nick1 = self.random_channel_nick(channel)
+        rand_nick2 = self.random_channel_nick(channel)
+        if rand_nick1 and rand_nick2 and rand_nick1 != rand_nick2:
             self.send_command('KICK', random_string(50),
-                              nick=rnick1, host=random_host(),
-                              target=f'{channel} {rnick2}')
-            self.channels[channel].remove(rnick2)
+                              nick=rand_nick1, host=random_host(),
+                              target=f'{channel} {rand_nick2}')
+            self.channels[channel].remove(rand_nick2)
 
     def flood_channel_message(self, channel):
         """Message from a user in a channel."""
         if not self.channels[channel]:
             return
-        rnick = self.channel_random_nick(channel)
-        if not rnick:
+        rand_nick = self.random_channel_nick(channel)
+        if not rand_nick:
             return
         msg = random_string(400, spaces=True)
         if 'channel' in self.args.notice and random.randint(1, 100) == 100:
             # notice for channel
             self.send_command('NOTICE', msg,
-                              nick=rnick, host=random_host(), target=channel)
+                              nick=rand_nick, host=random_host(),
+                              target=channel)
         else:
             # add random highlight
             if random.randint(1, 100) == 100:
@@ -286,11 +290,12 @@ class Client:  # pylint: disable=too-many-instance-attributes
                 # CTCP version
                 msg = '\x01VERSION\x01'
             self.send_command('PRIVMSG', msg,
-                              nick=rnick, host=random_host(), target=channel)
+                              nick=rand_nick, host=random_host(),
+                              target=channel)
 
     def flood(self):
         """Yeah, funny stuff here! Flood the client!"""
-        self.read(self.args.sleep)
+        self.recv(self.args.sleep)
         # global actions
         action = random.randint(1, 2)
         if action == 1 and len(self.channels) < self.args.maxchans:
@@ -309,7 +314,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
             else:
                 self.flood_channel_message(channel)
         # display progress
-        if self.out_count % 1000 == 0:
+        if self.conn.out_count % 1000 == 0:
             sys.stdout.write('.')
             sys.stdout.flush()
 
@@ -317,7 +322,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
         """Send messages from a file to client."""
         stdin = self.args.file == sys.stdin
         count = 0
-        self.read(0.2)
+        self.recv(0.2)
         try:  # pylint: disable=too-many-nested-blocks
             while True:
                 # display the prompt if we are reading in stdin
@@ -328,8 +333,6 @@ class Client:  # pylint: disable=too-many-instance-attributes
                 message = self.args.file.readline()
                 if not message:
                     break
-                if sys.version_info < (3,):
-                    message = message.decode('UTF-8')
                 message = message.rstrip('\n')
                 if message:
                     if message.startswith('/') and message[1:2] != '/':
@@ -339,7 +342,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
                     elif not message.startswith('//'):
                         self.send(message.format(self=self))
                         count += 1
-                self.read(0.1 if stdin else self.args.sleep)
+                self.recv(0.1 if stdin else self.args.sleep)
         except IOError as exc:
             self.end_msg = f'unable to read file {self.args.file}'
             self.end_exception = exc
@@ -362,27 +365,44 @@ class Client:  # pylint: disable=too-many-instance-attributes
             except Exception:  # pylint: disable=broad-except
                 pass
 
-    def stats(self):
-        """Display some statistics about data exchanged with the client."""
-        msgexcept = ''
-        if self.end_exception:
-            msgexcept = f'({self.end_exception})'
-        print(f'{self.end_msg} {msgexcept}')
-        elapsed = time.time() - self.start_time
-        countrate = self.out_count / elapsed
-        bytesrate = self.out_bytes / elapsed
-        print(f'Elapsed: {elapsed:.1f}s - '
-              f'packets: in:{self.in_count}, out:{self.out_count} '
-              f'({countrate:.0f}/s) - '
-              f'bytes: in:{self.in_bytes}, out: {self.out_bytes} '
-              f'({bytesrate:.0f}/s)')
+    def run(self):
+        """Execute the action asked for the client."""
+        if self.quit:
+            return
+
+        # send commands from file (which can be stdin)
+        if self.args.file:
+            self.send_file()
+            return
+
+        # wait a bit
+        if self.args.wait > 0:
+            print(f'Waiting {self.args.wait} seconds')
+            time.sleep(self.args.wait)
+
+        # flood the client
+        sys.stdout.write('Flooding client..')
+        sys.stdout.flush()
+        try:
+            while not self.quit:
+                self.flood()
+        except Exception as exc:  # pylint: disable=broad-except
+            self.end_msg = ('quit received' if self.quit
+                            else 'connection lost')
+            self.end_exception = exc
+        except KeyboardInterrupt:
+            self.end_msg = 'interrupted'
+        else:
+            self.end_msg = 'quit received'
+
+    def end(self):
+        """End client."""
+        msg_exc = f' ({self.end_exception})' if self.end_exception else ''
+        print(f'{self.end_msg}{msg_exc}')
+        print(str(self.conn))
         if self.end_msg == 'connection lost':
             print('Uh-oh! No quit received, client has crashed? Haha \\o/')
-
-    def __del__(self):
-        self.stats()
-        print(f'Closing connection with {self.addr}')
-        self.sock.close()
+        self.conn.close()
 
 
 def weercd_parser():
@@ -459,6 +479,7 @@ def main():
         print(f'Connection from {addr}')
         client = Client(clientsock, addr, args)
         client.run()
+        client.end()
         del client
         # no loop if message were sent from a file
         if args.file:
