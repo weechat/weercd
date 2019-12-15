@@ -37,8 +37,8 @@ NAME = 'weercd'
 VERSION = '1.0-dev'
 
 
-def fuzzy_string(max_length, spaces=False):
-    """Return a fuzzy string (random length and content)."""
+def random_string(max_length, spaces=False):
+    """Return a random string (random length and content)."""
     length = random.randint(1, max_length)
     chars = (string.ascii_uppercase
              + string.ascii_lowercase
@@ -47,14 +47,14 @@ def fuzzy_string(max_length, spaces=False):
     return ''.join(random.choice(chars) for x in range(length))
 
 
-def fuzzy_host():
-    """Return a fuzzy host name."""
-    return f'{fuzzy_string(10)}@{fuzzy_string(10)}'
+def random_host():
+    """Return a random host name."""
+    return f'{random_string(10)}@{random_string(10)}'
 
 
-def fuzzy_channel():
-    """Return a fuzzy channel name."""
-    return f'#{fuzzy_string(25)}'
+def random_channel():
+    """Return a random channel name."""
+    return f'#{random_string(25)}'
 
 
 class Client:  # pylint: disable=too-many-instance-attributes
@@ -110,12 +110,12 @@ class Client:  # pylint: disable=too-many-instance-attributes
         else:
             self.endmsg = 'quit received'
 
-    def fuzzy_nick(self, with_number=False):
-        """Return a fuzzy nick name."""
+    def random_nick(self, with_number=False):
+        """Return a random nick name."""
         if with_number:
             self.nicknumber += 1
-            return f'{fuzzy_string(5)}{self.nicknumber}'
-        return fuzzy_string(10)
+            return f'{random_string(5)}{self.nicknumber}'
+        return random_string(10)
 
     def send(self, data):
         """Send one message to client."""
@@ -210,7 +210,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
     def flood_self_join(self):
         """Self join on a new channel."""
-        channel = fuzzy_channel()
+        channel = random_channel()
         if channel in self.channels:
             return
         self.send_command('JOIN', channel,
@@ -223,16 +223,16 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
     def flood_user_notice(self):
         """Notice for the user."""
-        self.send_command('NOTICE', fuzzy_string(400, spaces=True),
-                          nick=self.fuzzy_nick(), host=fuzzy_host())
+        self.send_command('NOTICE', random_string(400, spaces=True),
+                          nick=self.random_nick(), host=random_host())
 
     def flood_channel_join(self, channel):
         """Join of a user in a channel."""
         if len(self.channels[channel]) >= self.args.maxnicks:
             return
-        newnick = self.fuzzy_nick(with_number=True)
+        newnick = self.random_nick(with_number=True)
         self.send_command('JOIN', channel,
-                          nick=newnick, host=fuzzy_host(), target='')
+                          nick=newnick, host=random_host(), target='')
         self.channels[channel].append(newnick)
 
     def flood_channel_part(self, channel):
@@ -244,10 +244,10 @@ class Client:  # pylint: disable=too-many-instance-attributes
             return
         if random.randint(1, 2) == 1:
             self.send_command('PART', channel,
-                              nick=rnick, host=fuzzy_host(), target='')
+                              nick=rnick, host=random_host(), target='')
         else:
-            self.send_command('QUIT', fuzzy_string(30),
-                              nick=rnick, host=fuzzy_host(), target='')
+            self.send_command('QUIT', random_string(30),
+                              nick=rnick, host=random_host(), target='')
         self.channels[channel].remove(rnick)
 
     def flood_channel_kick(self, channel):
@@ -257,8 +257,8 @@ class Client:  # pylint: disable=too-many-instance-attributes
         rnick1 = self.channel_random_nick(channel)
         rnick2 = self.channel_random_nick(channel)
         if rnick1 and rnick2 and rnick1 != rnick2:
-            self.send_command('KICK', fuzzy_string(50),
-                              nick=rnick1, host=fuzzy_host(),
+            self.send_command('KICK', random_string(50),
+                              nick=rnick1, host=random_host(),
                               target=f'{channel} {rnick2}')
             self.channels[channel].remove(rnick2)
 
@@ -269,11 +269,11 @@ class Client:  # pylint: disable=too-many-instance-attributes
         rnick = self.channel_random_nick(channel)
         if not rnick:
             return
-        msg = fuzzy_string(400, spaces=True)
+        msg = random_string(400, spaces=True)
         if 'channel' in self.args.notice and random.randint(1, 100) == 100:
             # notice for channel
             self.send_command('NOTICE', msg,
-                              nick=rnick, host=fuzzy_host(), target=channel)
+                              nick=rnick, host=random_host(), target=channel)
         else:
             # add random highlight
             if random.randint(1, 100) == 100:
@@ -286,7 +286,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
                 # CTCP version
                 msg = '\x01VERSION\x01'
             self.send_command('PRIVMSG', msg,
-                              nick=rnick, host=fuzzy_host(), target=channel)
+                              nick=rnick, host=random_host(), target=channel)
 
     def flood(self):
         """Yeah, funny stuff here! Flood the client!"""
