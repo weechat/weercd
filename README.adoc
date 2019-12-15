@@ -15,7 +15,7 @@ detect memory leaks, for example with client scripts).
 
 == Install
 
-This script works with Python 2.x (>= 2.7) and 3.x.
+This script requires Python ≥ 3.6.
 
 It is *STRONGLY RECOMMENDED* to connect this server with a client in a test
 environment:
@@ -31,7 +31,7 @@ environment:
 Open a terminal and run server:
 
 ----
-python weercd.py
+python3 weercd.py
 ----
 
 Open another terminal and run WeeChat with a temporary home directory:

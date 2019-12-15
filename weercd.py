@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2011-2019 Sébastien Helleu <flashcode@flashtux.org>
@@ -19,11 +19,7 @@
 # along with weercd.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-"""
-WeeChat IRC testing server.
-"""
-
-from __future__ import division, print_function
+"""WeeChat IRC testing server."""
 
 import argparse
 import os
@@ -53,15 +49,15 @@ def fuzzy_string(max_length, spaces=False):
 
 def fuzzy_host():
     """Return a fuzzy host name."""
-    return '{0}@{1}'.format(fuzzy_string(10), fuzzy_string(10))
+    return f'{fuzzy_string(10)}@{fuzzy_string(10)}'
 
 
 def fuzzy_channel():
     """Return a fuzzy channel name."""
-    return '#{0}'.format(fuzzy_string(25))
+    return f'#{fuzzy_string(25)}'
 
 
-class Client(object):  # pylint: disable=too-many-instance-attributes
+class Client:  # pylint: disable=too-many-instance-attributes
     """A client of weercd server."""
 
     def __init__(self, sock, addr, args):
@@ -96,7 +92,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
 
         # flood the client
         if self.args.wait > 0:
-            print('Waiting', self.args.wait, 'seconds')
+            print(f'Waiting {self.args.wait} seconds')
             time.sleep(self.args.wait)
         sys.stdout.write('Flooding client..')
         sys.stdout.flush()
@@ -118,41 +114,39 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         """Return a fuzzy nick name."""
         if with_number:
             self.nicknumber += 1
-            return '{0}{1}'.format(fuzzy_string(5), self.nicknumber)
+            return f'{fuzzy_string(5)}{self.nicknumber}'
         return fuzzy_string(10)
 
     def send(self, data):
         """Send one message to client."""
         if self.args.debug:
-            print('<--', data)
+            print(f'<-- {data}')
         msg = data + '\r\n'
         self.outbytes += len(msg)
         self.sock.send(msg.encode('UTF-8'))
         self.outcount += 1
 
     # pylint: disable=too-many-arguments
-    def send_cmd(self, cmd, data, nick='{self.name}', host='',
-                 target='{self.nick}'):
+    def send_command(self, command, data, nick=None, host='', target=None):
         """Send an IRC command to the client."""
-        self.send(':{0}{1}{2} {3}{4}{5}{6}{7}'
-                  ''.format(nick,
-                            '!' if host else '',
-                            host,
-                            cmd,
-                            ' ' if target else '',
-                            target,
-                            ' :' if data else '',
-                            data).format(self=self))
+        if nick is None:
+            nick = self.name
+        if target is None:
+            target = self.nick
+        sender = f':{nick}{"!" if host else ""}{host}'
+        target = f'{" " if target else ""}{target}'
+        data = f'{" :" if data else ""}{data}'
+        self.send(f'{sender} {command}{target}{data}')
 
     def recv(self, data):
         """Read one IRC message from client."""
         if self.args.debug:
-            print('-->', data)
+            print(f'--> {data}')
         if data.startswith('PING '):
             args = data[5:]
             if args[0] == ':':
                 args = args[1:]
-            self.send('PONG :{0}'.format(args))
+            self.send(f'PONG :{args}')
         elif data.startswith('NICK '):
             self.nick = data[5:]
         elif data.startswith('PART '):
@@ -189,15 +183,16 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             while self.nick == '':
                 self.read(0.1)
                 if self.nick and count > 0:
-                    self.send_cmd('433', 'Nickname is already in use.',
-                                  target='* {self.nick}')
+                    self.send_command('433', 'Nickname is already in use.',
+                                      target=f'* {self.nick}')
                     self.nick = ''
                     count -= 1
-            self.send_cmd('001', 'Welcome to the WeeChat IRC server')
-            self.send_cmd('002', 'Your host is {self.name}, running version '
-                          '{self.version}')
-            self.send_cmd('003', 'Are you solid like a rock?')
-            self.send_cmd('004', 'Let\'s see!')
+            self.send_command('001', 'Welcome to the WeeChat IRC server')
+            self.send_command('002',
+                              f'Your host is {self.name}, '
+                              f'running version {self.version}')
+            self.send_command('003', 'Are you solid like a rock?')
+            self.send_command('004', 'Let\'s see!')
         except KeyboardInterrupt:
             self.quit = True
             self.endmsg = 'interrupted'
@@ -218,26 +213,26 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         channel = fuzzy_channel()
         if channel in self.channels:
             return
-        self.send_cmd('JOIN', channel,
-                      nick=self.nick, host=self.addr[0], target='')
-        self.send_cmd('353', '@{self.nick}',
-                      target='{0} = {1}'.format(self.nick, channel))
-        self.send_cmd('366', 'End of /NAMES list.',
-                      target='{0} {1}'.format(self.nick, channel))
+        self.send_command('JOIN', channel,
+                          nick=self.nick, host=self.addr[0], target='')
+        self.send_command('353', f'@{self.nick}',
+                          target=f'{self.nick} = {channel}')
+        self.send_command('366', 'End of /NAMES list.',
+                          target=f'{self.nick} {channel}')
         self.channels[channel] = [self.nick]
 
     def flood_user_notice(self):
         """Notice for the user."""
-        self.send_cmd('NOTICE', fuzzy_string(400, spaces=True),
-                      nick=self.fuzzy_nick(), host=fuzzy_host())
+        self.send_command('NOTICE', fuzzy_string(400, spaces=True),
+                          nick=self.fuzzy_nick(), host=fuzzy_host())
 
     def flood_channel_join(self, channel):
         """Join of a user in a channel."""
         if len(self.channels[channel]) >= self.args.maxnicks:
             return
         newnick = self.fuzzy_nick(with_number=True)
-        self.send_cmd('JOIN', channel,
-                      nick=newnick, host=fuzzy_host(), target='')
+        self.send_command('JOIN', channel,
+                          nick=newnick, host=fuzzy_host(), target='')
         self.channels[channel].append(newnick)
 
     def flood_channel_part(self, channel):
@@ -248,11 +243,11 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         if not rnick:
             return
         if random.randint(1, 2) == 1:
-            self.send_cmd('PART', channel,
-                          nick=rnick, host=fuzzy_host(), target='')
+            self.send_command('PART', channel,
+                              nick=rnick, host=fuzzy_host(), target='')
         else:
-            self.send_cmd('QUIT', fuzzy_string(30),
-                          nick=rnick, host=fuzzy_host(), target='')
+            self.send_command('QUIT', fuzzy_string(30),
+                              nick=rnick, host=fuzzy_host(), target='')
         self.channels[channel].remove(rnick)
 
     def flood_channel_kick(self, channel):
@@ -262,9 +257,9 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         rnick1 = self.channel_random_nick(channel)
         rnick2 = self.channel_random_nick(channel)
         if rnick1 and rnick2 and rnick1 != rnick2:
-            self.send_cmd('KICK', fuzzy_string(50),
-                          nick=rnick1, host=fuzzy_host(),
-                          target='{0} {1}'.format(channel, rnick2))
+            self.send_command('KICK', fuzzy_string(50),
+                              nick=rnick1, host=fuzzy_host(),
+                              target=f'{channel} {rnick2}')
             self.channels[channel].remove(rnick2)
 
     def flood_channel_message(self, channel):
@@ -277,21 +272,21 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         msg = fuzzy_string(400, spaces=True)
         if 'channel' in self.args.notice and random.randint(1, 100) == 100:
             # notice for channel
-            self.send_cmd('NOTICE', msg,
-                          nick=rnick, host=fuzzy_host(), target=channel)
+            self.send_command('NOTICE', msg,
+                              nick=rnick, host=fuzzy_host(), target=channel)
         else:
             # add random highlight
             if random.randint(1, 100) == 100:
-                msg = '{0}: {1}'.format(self.nick, msg)
+                msg = f'{self.nick}: {msg}'
             action2 = random.randint(1, 50)
             if action2 == 1:
                 # CTCP action (/me)
-                msg = '\x01ACTION {0}\x01'.format(msg)
+                msg = f'\x01ACTION {msg}\x01'
             elif action2 == 2:
                 # CTCP version
                 msg = '\x01VERSION\x01'
-            self.send_cmd('PRIVMSG', msg,
-                          nick=rnick, host=fuzzy_host(), target=channel)
+            self.send_command('PRIVMSG', msg,
+                              nick=rnick, host=fuzzy_host(), target=channel)
 
     def flood(self):
         """Yeah, funny stuff here! Flood the client!"""
@@ -346,7 +341,7 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
                         count += 1
                 self.read(0.1 if stdin else self.args.sleep)
         except IOError as exc:
-            self.endmsg = 'unable to read file {0}'.format(self.args.file)
+            self.endmsg = f'unable to read file {self.args.file}'
             self.endexcept = exc
             return
         except KeyboardInterrupt:
@@ -358,8 +353,9 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
             return
         finally:
             sys.stdout.write('\n')
-            sys.stdout.write('{0} messages sent from {1}, press Enter to exit'
-                             .format(count, 'stdin' if stdin else 'file'))
+            sys.stdout.write(f'{count} messages sent '
+                             f'from {"stdin" if stdin else "file"}, '
+                             f'press Enter to exit')
             sys.stdout.flush()
             try:
                 sys.stdin.readline()
@@ -370,39 +366,38 @@ class Client(object):  # pylint: disable=too-many-instance-attributes
         """Display some statistics about data exchanged with the client."""
         msgexcept = ''
         if self.endexcept:
-            msgexcept = '({0})'.format(self.endexcept)
-        print(self.endmsg, msgexcept)
+            msgexcept = f'({self.endexcept})'
+        print(f'{self.endmsg} {msgexcept}')
         elapsed = time.time() - self.starttime
         countrate = self.outcount / elapsed
         bytesrate = self.outbytes / elapsed
-        print('Elapsed: {elapsed:.1f}s - '
-              'packets: in:{self.incount}, out:{self.outcount} '
-              '({countrate:.0f}/s) - '
-              'bytes: in:{self.inbytes}, out: {self.outbytes} '
-              '({bytesrate:.0f}/s)'
-              ''.format(self=self,
-                        elapsed=elapsed,
-                        countrate=countrate,
-                        bytesrate=bytesrate))
+        print(f'Elapsed: {elapsed:.1f}s - '
+              f'packets: in:{self.incount}, out:{self.outcount} '
+              f'({countrate:.0f}/s) - '
+              f'bytes: in:{self.inbytes}, out: {self.outbytes} '
+              f'({bytesrate:.0f}/s)')
         if self.endmsg == 'connection lost':
             print('Uh-oh! No quit received, client has crashed? Haha \\o/')
 
     def __del__(self):
         self.stats()
-        print('Closing connection with', self.addr)
+        print(f'Closing connection with {self.addr}')
         self.sock.close()
 
 
 def main():
     """Main function."""
     # parse command line arguments
+    epilog = """\
+Note: the environment variable "WEERCD_OPTIONS" can be \
+set with default options. Argument "@file.txt" can be used to read \
+default options in a file."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         fromfile_prefix_chars='@',
         description='The WeeChat IRC testing server.',
-        epilog='Note: the environment variable "WEERCD_OPTIONS" can be '
-        'set with default options. Argument "@file.txt" can be used to read '
-        'default options in a file.')
+        epilog=epilog,
+    )
     parser.add_argument('-H', '--host', help='host for socket bind')
     parser.add_argument('-p', '--port', type=int, default=7777,
                         help='port for socket bind')
@@ -430,12 +425,12 @@ def main():
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug output')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
-    args = parser.parse_args(shlex.split(os.getenv('WEERCD_OPTIONS') or '') +
-                             sys.argv[1:])
+    args = parser.parse_args(shlex.split(os.getenv('WEERCD_OPTIONS') or '')
+                             + sys.argv[1:])
 
     # welcome message, with options
-    print(NAME, VERSION, '- WeeChat IRC testing server')
-    print('Options:', vars(args))
+    print(f'{NAME} {VERSION} - WeeChat IRC testing server')
+    print(f'Options: {vars(args)}')
 
     # main loop
     while True:
@@ -445,9 +440,9 @@ def main():
             servsock.bind((args.host or '', args.port))
             servsock.listen(1)
         except Exception as exc:  # pylint: disable=broad-except
-            print('Socket error: {0}'.format(exc))
+            print(f'Socket error: {exc}')
             sys.exit(1)
-        print('Listening on port', args.port, '(ctrl-C to exit)')
+        print(f'Listening on port {args.port} (ctrl-C to exit)')
         clientsock = None
         addr = None
         try:
@@ -455,7 +450,7 @@ def main():
         except KeyboardInterrupt:
             servsock.close()
             sys.exit(0)
-        print('Connection from', addr)
+        print(f'Connection from {addr}')
         client = Client(clientsock, addr, args)
         client.run()
         del client
