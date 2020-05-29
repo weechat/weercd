@@ -3,7 +3,7 @@
 :email: flashcode@flashtux.org
 :lang: en
 
-image:https://travis-ci.org/weechat/weercd.svg?branch=master["Build Status", link="https://travis-ci.org/weechat/weercd"]
+image:https://github.com/weechat/weercd/workflows/CI/badge.svg["CI", link="https://github.com/weechat/weercd/actions"]
 
 `weercd` is the WeeChat IRC testing server.
 
