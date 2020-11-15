@@ -33,7 +33,7 @@ import time
 import traceback
 
 NAME = 'weercd'
-VERSION = '1.0-dev'
+VERSION = '1.0.0-dev'
 
 
 def random_string(max_length, spaces=False):
