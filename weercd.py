@@ -2,20 +2,20 @@
 #
 # Copyright (C) 2011-2020 Sébastien Helleu <flashcode@flashtux.org>
 #
-# This file is part of weercd, the WeeChat IRC testing server.
+# This file is part of Weercd, the WeeChat IRC testing server.
 #
-# weercd is free software; you can redistribute it and/or modify
+# Weercd is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 #
-# weercd is distributed in the hope that it will be useful,
+# Weercd is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with weercd.  If not, see <https://www.gnu.org/licenses/>.
+# along with Weercd.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 """WeeChat IRC testing server."""
@@ -116,7 +116,7 @@ class Connection:  # pylint: disable=too-many-instance-attributes
 
 
 class Client:  # pylint: disable=too-many-instance-attributes
-    """A client of weercd server."""
+    """A client of Weercd server."""
 
     def __init__(self, sock, addr, args):
         self.conn = Connection(sock, addr, args.debug)
