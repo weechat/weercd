@@ -57,7 +57,7 @@ Yeah, it's stable! \o/
 
 ## Copyright
 
-Copyright © 2011-2020 [Sébastien Helleu](https://github.com/flashcode)
+Copyright © 2011-2021 [Sébastien Helleu](https://github.com/flashcode)
 
 This file is part of Weercd, the WeeChat IRC testing server.
 
