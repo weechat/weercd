@@ -17,7 +17,11 @@
 # along with Weercd.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-all: check
+CONTAINER_CMD ?= "docker"
+
+.PHONY: all check lint flake8 pylint container
+
+all: check container
 
 check: lint
 
@@ -29,3 +33,6 @@ flake8:
 
 pylint:
 	pylint weercd.py
+
+container:
+	$(CONTAINER_CMD) build -f Containerfile -t weercd .

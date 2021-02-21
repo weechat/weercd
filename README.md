@@ -55,6 +55,23 @@ Wait some months…
 WeeChat still not crashed and does not use 200 TB of RAM ?
 Yeah, it's stable! \o/
 
+## Run in a container
+
+You can also run Weercd in a container, using [Docker](https://www.docker.com/)
+or [Podman](https://podman.io/).
+
+To build the container:
+
+```
+docker build -f Containerfile -t weercd .
+```
+
+To run the container as a daemon:
+
+```
+docker run -p 7777:7777 -d weercd
+```
+
 ## Copyright
 
 Copyright © 2011-2021 [Sébastien Helleu](https://github.com/flashcode)
