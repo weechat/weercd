@@ -63,7 +63,7 @@ or [Podman](https://podman.io/).
 To build the container:
 
 ```
-docker build -f Containerfile -t weercd .
+make container
 ```
 
 To run the container as a daemon:
