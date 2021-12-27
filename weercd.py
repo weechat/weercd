@@ -326,8 +326,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
             while True:
                 # display the prompt if we are reading in stdin
                 if stdin:
-                    sys.stdout.write('Message to send to client '
-                                     '(/help for help): ')
+                    sys.stdout.write('Message to send to client: ')
                     sys.stdout.flush()
                 message = self.args.file.readline()
                 if not message:
@@ -335,9 +334,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
                 message = message.rstrip('\n')
                 if message:
                     if message.startswith('/') and message[1:2] != '/':
-                        command = message[1:]
-                        if command == 'help':
-                            pass
+                        pass
                     elif not message.startswith('//'):
                         self.send(message.format(self=self))
                         count += 1
