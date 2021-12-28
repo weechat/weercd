@@ -358,8 +358,8 @@ class Client:  # pylint: disable=too-many-instance-attributes
             sys.stdout.flush()
             try:
                 sys.stdin.readline()
-            except Exception:  # pylint: disable=broad-except
-                pass
+            except KeyboardInterrupt:
+                print('interrupted')
 
     def run(self):
         """Execute the action asked for the client."""
