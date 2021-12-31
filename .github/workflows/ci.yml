@@ -37,13 +37,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pylint
+          pip install bandit flake8 pylint
 
       - name: Lint with flake8
         run: make flake8
 
       - name: Lint with pylint
         run: make pylint
+
+      - name: Lint with bandit
+        run: make bandit
 
   container:
 

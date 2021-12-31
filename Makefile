@@ -25,7 +25,7 @@ all: check container
 
 check: lint
 
-lint: flake8 pylint
+lint: flake8 pylint bandit
 
 flake8:
 	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -33,6 +33,9 @@ flake8:
 
 pylint:
 	pylint weercd.py
+
+bandit:
+	bandit --skip B311 weercd.py
 
 container:
 	$(CONTAINER_CMD) build -f Containerfile -t weercd .
