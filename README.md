@@ -74,7 +74,7 @@ docker run -p 7777:7777 -d weercd
 
 ## Copyright
 
-Copyright © 2011-2021 [Sébastien Helleu](https://github.com/flashcode)
+Copyright © 2011-2022 [Sébastien Helleu](https://github.com/flashcode)
 
 This file is part of Weercd, the WeeChat IRC testing server.
 
