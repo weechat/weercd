@@ -100,7 +100,7 @@ class Connection:  # pylint: disable=too-many-instance-attributes
                     if pos < 0:
                         break
                     msgs.append(data[0:pos])
-                    data = data[pos + 2:]
+                    data = data[pos + 2 :]
                 self.last_buffer = data
         return msgs
 
