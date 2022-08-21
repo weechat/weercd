@@ -16,7 +16,6 @@ jobs:
           - macos-12
           - macos-11
         python-version:
-          - "3.6"
           - "3.7"
           - "3.8"
           - "3.9"
