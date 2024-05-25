@@ -27,13 +27,13 @@ environment:
 
 Open a terminal and run server:
 
-```
+```bash
 python3 weercd.py
 ```
 
 Open another terminal and run WeeChat with a temporary home directory:
 
-```
+```bash
 weechat --temp-dir
 ```
 
@@ -45,7 +45,7 @@ Optional: install script(s) in WeeChat (for example `/script install xxx`).
 
 Add server and connect to it:
 
-```
+```text
 /server add weercd 127.0.0.1/7777
 /connect weercd
 ```
@@ -62,13 +62,13 @@ or [Podman](https://podman.io/).
 
 To build the container:
 
-```
+```bash
 make container
 ```
 
 To run the container as a daemon:
 
-```
+```bash
 docker run -p 7777:7777 -d weercd
 ```
 
