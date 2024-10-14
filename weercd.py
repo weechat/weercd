@@ -157,7 +157,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
         """Send an IRC message to the client."""
         self.conn.send(message)
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def send_command(self, command, data, nick=None, host="", target=None):
         """Send an IRC command to the client."""
         if nick is None:
