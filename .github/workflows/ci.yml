@@ -24,7 +24,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -59,7 +59,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: ${{ matrix.builder }} build ${{ matrix.image }}
         run: make CONTAINER_CMD=${{ matrix.builder }} container
