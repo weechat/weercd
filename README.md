@@ -1,6 +1,7 @@
 # Weercd
 
 [![Build Status](https://github.com/weechat/weercd/workflows/CI/badge.svg)](https://github.com/weechat/weercd/actions?query=workflow%3A%22CI%22)
+[![REUSE status](https://api.reuse.software/badge/github.com/weechat/weercd)](https://api.reuse.software/info/github.com/weechat/weercd)
 
 Weercd is the WeeChat IRC testing server.
 
