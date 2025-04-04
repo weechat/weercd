@@ -33,7 +33,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install bandit flake8 pylint
+          pip install bandit flake8 pylint reuse
+
+      - name: Check REUSE compliancy
+        run: reuse lint
 
       - name: Lint with flake8
         run: make flake8
