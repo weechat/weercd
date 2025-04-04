@@ -1,5 +1,7 @@
 #
-# Copyright (C) 2011-2025 Sébastien Helleu <flashcode@flashtux.org>
+# SPDX-FileCopyrightText: 2011-2025 Sébastien Helleu <flashcode@flashtux.org>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # This file is part of Weercd, the WeeChat IRC testing server.
 #
