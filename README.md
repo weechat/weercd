@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2014-2025 Sébastien Helleu <flashcode@flashtux.org>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # Weercd
 
 [![Build Status](https://github.com/weechat/weercd/workflows/CI/badge.svg)](https://github.com/weechat/weercd/actions?query=workflow%3A%22CI%22)
@@ -75,6 +81,7 @@ docker run -p 7777:7777 -d weercd
 
 ## Copyright
 
+<!-- REUSE-IgnoreStart -->
 Copyright © 2011-2025 [Sébastien Helleu](https://github.com/flashcode)
 
 This file is part of Weercd, the WeeChat IRC testing server.
@@ -91,3 +98,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with Weercd.  If not, see <https://www.gnu.org/licenses/>.
+<!-- REUSE-IgnoreEnd -->
