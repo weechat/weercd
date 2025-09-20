@@ -28,14 +28,36 @@ import random
 import re
 import select
 import shlex
+import signal
 import socket
 import string
 import sys
 import time
 import traceback
 
+from contextlib import contextmanager
+
 NAME = "weercd"
 VERSION = "1.0.0-dev"
+
+
+class TimeoutException(Exception):
+    pass
+
+
+@contextmanager
+def time_limit(seconds):
+    """Set a time limit for a function."""
+    def signal_handler(signum, frame):
+        raise TimeoutException("Timed out!")
+    if seconds > 0:
+        signal.signal(signal.SIGALRM, signal_handler)
+        signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        if seconds > 0:
+            signal.alarm(0)
 
 
 def random_string(max_length, spaces=False):
@@ -416,16 +438,17 @@ class Client:  # pylint: disable=too-many-instance-attributes
         # flood the client
         sys.stdout.write("Flooding client..")
         sys.stdout.flush()
-        try:
-            while not self.quit:
-                self.flood()
-        except Exception as exc:  # pylint: disable=broad-except
-            self.end_msg = "quit received" if self.quit else "connection lost"
-            self.end_exception = exc
-        except KeyboardInterrupt:
-            self.end_msg = "interrupted"
-        else:
-            self.end_msg = "quit received"
+        with time_limit(self.args.time):
+            try:
+                while not self.quit:
+                    self.flood()
+            except KeyboardInterrupt:
+                self.end_msg = "interrupted"
+            except TimeoutException:
+                self.end_msg = "timeout"
+            except Exception as exc:  # pylint: disable=broad-except
+                self.end_msg = "quit received" if self.quit else "connection lost"
+                self.end_exception = exc
 
     def end(self):
         """End client."""
@@ -449,17 +472,6 @@ default options in a file."""
         description="The WeeChat IRC testing server.",
         epilog=epilog,
     )
-    parser.add_argument("-H", "--host", help="host for socket bind")
-    parser.add_argument(
-        "-p", "--port", type=int, default=7777, help="port for socket bind"
-    )
-    parser.add_argument(
-        "-f",
-        "--file",
-        type=argparse.FileType("r"),
-        help="send messages from file, instead of flooding "
-        'the client (use "-" for stdin)',
-    )
     parser.add_argument(
         "-c",
         "--maxchans",
@@ -468,19 +480,29 @@ default options in a file."""
         help="max number of channels to join",
     )
     parser.add_argument(
+        "-C",
+        "--maxclients",
+        type=int,
+        default=0,
+        help="max number of clients (0 = unlimited)",
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="debug output"
+    )
+    parser.add_argument(
+        "-f",
+        "--file",
+        type=argparse.FileType("r"),
+        help="send messages from file, instead of flooding "
+        'the client (use "-" for stdin)',
+    )
+    parser.add_argument("-H", "--host", help="host for socket bind")
+    parser.add_argument(
         "-n",
         "--maxnicks",
         type=int,
         default=100,
         help="max number of nicks per channel",
-    )
-    parser.add_argument(
-        "-u",
-        "--nickused",
-        type=int,
-        default=0,
-        help="send 433 (nickname already in use) this number "
-        "of times before accepting nick",
     )
     parser.add_argument(
         "-N",
@@ -489,7 +511,10 @@ default options in a file."""
         choices=["user", "channel"],
         default=["user", "channel"],
         nargs="*",
-        help='notices to send: "user" (to user), "channel" ' "(to channel)",
+        help='notices to send: "user" (to user), "channel" (to channel)',
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, default=7777, help="port for socket bind"
     )
     parser.add_argument(
         "-s",
@@ -500,16 +525,28 @@ default options in a file."""
         "to client (float, in seconds)",
     )
     parser.add_argument(
+        "-t",
+        "--time",
+        type=int,
+        default=0,
+        help="stop flooding after this number of seconds (0 = unlimited)",
+    )
+    parser.add_argument(
+        "-u",
+        "--nickused",
+        type=int,
+        default=0,
+        help="send 433 (nickname already in use) this number "
+        "of times before accepting nick",
+    )
+    parser.add_argument("-v", "--version", action="version", version=VERSION)
+    parser.add_argument(
         "-w",
         "--wait",
         type=float,
         default=0,
-        help="time to wait before flooding client (float, " "in seconds)",
+        help="time to wait before flooding client (float, in seconds)",
     )
-    parser.add_argument(
-        "-d", "--debug", action="store_true", help="debug output"
-    )
-    parser.add_argument("-v", "--version", action="version", version=VERSION)
     return parser
 
 
@@ -526,7 +563,8 @@ def main():
     print(f"Options: {vars(args)}")
 
     # main loop
-    while True:
+    count_clients = 0
+    while args.maxclients == 0 or count_clients < args.maxclients:
         servsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             servsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -548,9 +586,7 @@ def main():
         client.run()
         client.end()
         del client
-        # no loop if message were sent from a file
-        if args.file:
-            break
+        count_clients += 1
 
 
 if __name__ == "__main__":
