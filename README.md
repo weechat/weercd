@@ -53,7 +53,7 @@ Optional: install script(s) in WeeChat (for example `/script install xxx`).
 Add server and connect to it:
 
 ```text
-/server add weercd 127.0.0.1/7777
+/server add weercd 127.0.0.1/7777 -notls
 /connect weercd
 ```
 
