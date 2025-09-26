@@ -42,7 +42,7 @@ VERSION = "1.0.0-dev"
 
 
 class TimeoutException(Exception):
-    pass
+    """Custom timeout exception."""
 
 
 @contextmanager
@@ -223,7 +223,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
         """Receive messages and parse them."""
         try:
             msgs = self.conn.read(timeout)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             print(f"Error reading on socket: {exc}")
             self.read_error = True
             return
