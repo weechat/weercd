@@ -155,9 +155,14 @@ class Client:  # pylint: disable=too-many-instance-attributes
         self.nick_number = 0
         self.channels = {}
         self.quit = False
+        self.read_error = False
         self.end_msg = ""
         self.end_exception = None
         self.connect()
+
+    def has_ended(self):
+        """Check if the server has ended or the client has disconnected."""
+        return self.quit or self.read_error
 
     def random_nick(self, with_number=False):
         """Return a random nick name."""
@@ -216,7 +221,12 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
     def recv(self, timeout):
         """Receive messages and parse them."""
-        msgs = self.conn.read(timeout)
+        try:
+            msgs = self.conn.read(timeout)
+        except Exception as exc:
+            print(f"Error reading on socket: {exc}")
+            self.read_error = True
+            return
         for msg in msgs:
             self.parse_message(msg)
 
@@ -225,6 +235,8 @@ class Client:  # pylint: disable=too-many-instance-attributes
         count = self.args.nickused
         while self.nick == "":
             self.recv(0.1)
+            if self.has_ended():
+                return
             if self.nick and count > 0:
                 self.send_command(
                     "433",
@@ -422,7 +434,7 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
     def run(self):
         """Execute the action asked for the client."""
-        if self.quit:
+        if self.has_ended():
             return
 
         # send commands from file (which can be stdin)
@@ -440,14 +452,19 @@ class Client:  # pylint: disable=too-many-instance-attributes
         sys.stdout.flush()
         with time_limit(self.args.time):
             try:
-                while not self.quit:
+                while not self.has_ended():
                     self.flood()
             except KeyboardInterrupt:
                 self.end_msg = "interrupted"
             except TimeoutException:
                 self.end_msg = "timeout"
             except Exception as exc:  # pylint: disable=broad-except
-                self.end_msg = "quit received" if self.quit else "connection lost"
+                if self.quit:
+                    self.end_msg = "quit received"
+                elif self.read_error:
+                    self.end_msg = "read error"
+                else:
+                    self.end_msg = "connection lost"
                 self.end_exception = exc
 
     def end(self):
