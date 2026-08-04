@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2025 Sébastien Helleu <flashcode@flashtux.org>
+# SPDX-FileCopyrightText: 2020-2026 Sébastien Helleu <flashcode@flashtux.org>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -29,7 +29,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -64,7 +64,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: ${{ matrix.builder }} build ${{ matrix.image }}
         run: make CONTAINER_CMD=${{ matrix.builder }} container

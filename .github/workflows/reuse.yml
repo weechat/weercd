@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Sébastien Helleu <flashcode@flashtux.org>
+# SPDX-FileCopyrightText: 2025-2026 Sébastien Helleu <flashcode@flashtux.org>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -16,7 +16,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: REUSE Compliance Check
         uses: fsfe/reuse-action@v4
