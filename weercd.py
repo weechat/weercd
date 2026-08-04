@@ -19,10 +19,14 @@ import sys
 import time
 import traceback
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
+from pathlib import Path
 
 NAME = "weercd"
 VERSION = "1.0.0-dev"
+
+# special path meaning "read messages on standard input"
+STDIN_PATH = Path("-")
 
 
 class TimeoutException(Exception):
@@ -372,27 +376,33 @@ class Client:  # pylint: disable=too-many-instance-attributes
 
     def send_file(self):  # pylint: disable=too-many-branches
         """Send messages from a file to client."""
-        stdin = self.args.file == sys.stdin
+        stdin = self.args.file == STDIN_PATH
         count = 0
         self.recv(0.2)
         try:  # pylint: disable=too-many-nested-blocks
-            while True:
-                # display the prompt if we are reading in stdin
-                if stdin:
-                    sys.stdout.write("Message to send to client: ")
-                    sys.stdout.flush()
-                message = self.args.file.readline()
-                if not message:
-                    break
-                message = message.rstrip("\n")
-                if message:
-                    if message.startswith("/") and message[1:2] != "/":
-                        pass
-                    elif not message.startswith("//"):
-                        self.send(message.format(self=self))
-                        count += 1
-                self.recv(0.1 if stdin else self.args.sleep)
-        except IOError as exc:
+            # standard input must not be closed on exit: it is read again
+            # at the end of this function
+            file_context = (
+                nullcontext(sys.stdin) if stdin else self.args.file.open()
+            )
+            with file_context as input_file:
+                while True:
+                    # display the prompt if we are reading in stdin
+                    if stdin:
+                        sys.stdout.write("Message to send to client: ")
+                        sys.stdout.flush()
+                    message = input_file.readline()
+                    if not message:
+                        break
+                    message = message.rstrip("\n")
+                    if message:
+                        if message.startswith("/") and message[1:2] != "/":
+                            pass
+                        elif not message.startswith("//"):
+                            self.send(message.format(self=self))
+                            count += 1
+                    self.recv(0.1 if stdin else self.args.sleep)
+        except OSError as exc:
             self.end_msg = f"unable to read file {self.args.file}"
             self.end_exception = exc
             return
@@ -461,6 +471,20 @@ class Client:  # pylint: disable=too-many-instance-attributes
         self.conn.close()
 
 
+def readable_file(filename):
+    """
+    Return the path of a readable file, to use as argparse type.
+
+    The special name "-" returns STDIN_PATH (standard input).
+    """
+    if filename == "-":
+        return STDIN_PATH
+    path = Path(filename)
+    if not os.access(path, os.R_OK):
+        raise argparse.ArgumentTypeError(f"unable to read file: {filename}")
+    return path
+
+
 def weercd_parser():
     """Return the parser for command line options."""
     epilog = """\
@@ -493,7 +517,7 @@ default options in a file."""
     parser.add_argument(
         "-f",
         "--file",
-        type=argparse.FileType("r"),
+        type=readable_file,
         help="send messages from file, instead of flooding "
         'the client (use "-" for stdin)',
     )
